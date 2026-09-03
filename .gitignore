@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local data and runtime artifacts
+data/raw/*.csv
+data/processed/
+notebooks/creditcardfraud/
+mlruns/
+.mlflow/
+graphify-out/
+*.log
+.env
+.env.*
+kaggle.json
+.kaggle/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+
+# Keep promoted model files local unless instructor requests otherwise
+models/*.joblib
+models/best_run.json
