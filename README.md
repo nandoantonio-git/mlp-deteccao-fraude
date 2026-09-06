@@ -2,7 +2,16 @@
 
 Projeto acadêmico de Machine Learning para detectar fraude em transações de cartão de crédito usando MLP, rastreamento de experimentos e API local de predição.
 
-Stack principal:
+## Integrantes
+
+| Integrante | RM |
+| --- | --- |
+| Abner P Barbosa | 558468 |
+| Fernando | 555201 |
+| Helo | 554535 |
+| Edu | 556803 |
+
+## Stack principal
 
 - Python 3.10+
 - scikit-learn `MLPClassifier`
