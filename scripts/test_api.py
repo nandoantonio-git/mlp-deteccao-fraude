@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-import sys
+import math
 
 import requests
 
@@ -42,13 +42,31 @@ SAMPLE_TRANSACTION = {
 
 
 def main() -> int:
-    response = requests.post(URL, json=SAMPLE_TRANSACTION, timeout=15)
+    try:
+        response = requests.post(URL, json=SAMPLE_TRANSACTION, timeout=30)
+    except requests.RequestException as exc:
+        print(f"API request failed: {exc}")
+        return 1
     print("status_code=", response.status_code)
     try:
-        print(json.dumps(response.json(), indent=2, ensure_ascii=False))
+        body = response.json()
+        print(json.dumps(body, indent=2, ensure_ascii=False))
     except ValueError:
         print(response.text)
-    return 0 if response.ok else 1
+        return 1
+    if response.status_code != 200 or not isinstance(body, dict):
+        return 1
+    probability = body.get("fraud_probability")
+    valid = (
+        set(body) == {"prediction", "label", "fraud_probability"}
+        and type(body.get("prediction")) is int
+        and body["prediction"] in (0, 1)
+        and body.get("label") == ("fraude" if body["prediction"] else "legitima")
+        and type(probability) in (int, float)
+        and math.isfinite(probability)
+        and 0 <= probability <= 1
+    )
+    return 0 if valid else 1
 
 
 if __name__ == "__main__":

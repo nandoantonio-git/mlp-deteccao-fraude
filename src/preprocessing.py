@@ -10,6 +10,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+MLFLOW_TRACKING_URI = (PROJECT_ROOT / "mlruns").as_uri()
 DATA_PATH = PROJECT_ROOT / "data" / "raw" / "creditcard.csv"
 MODELS_DIR = PROJECT_ROOT / "models"
 REPORTS_DIR = PROJECT_ROOT / "reports"
@@ -22,6 +23,16 @@ REQUIRED_COLUMNS = [*FEATURE_COLUMNS, TARGET_COLUMN]
 MODEL_PATH = MODELS_DIR / "best_model.joblib"
 PREPROCESSOR_PATH = MODELS_DIR / "preprocessor.joblib"
 BEST_RUN_PATH = MODELS_DIR / "best_run.json"
+DATASET_POLICY = "exact_duplicates_removed_v1"
+
+
+def deduplicate_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep the first exact record; reject conflicting labels for identical inputs."""
+    validate_required_columns(df)
+    clean = df.drop_duplicates(subset=REQUIRED_COLUMNS).copy()
+    if clean.duplicated(subset=FEATURE_COLUMNS).any():
+        raise ValueError("Identical transaction features have conflicting target labels")
+    return clean
 
 
 def build_preprocessor() -> ColumnTransformer:

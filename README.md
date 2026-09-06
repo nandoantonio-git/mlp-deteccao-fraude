@@ -33,7 +33,7 @@ mlp-deteccao-fraude/
 ## 1. Preparar ambiente
 
 ```bash
-cd /Users/nando_mac/mlp-deteccao-fraude
+cd mlp-deteccao-fraude
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -99,6 +99,18 @@ O notebook documenta:
 
 ## 4. Treinar modelos e registrar no MLflow
 
+Antes do split, o preparo remove registros exatamente duplicados e rejeita
+entradas idênticas com rótulos conflitantes. O CSV original é preservado.
+Nesta base foram removidas **1.081 duplicatas**, restando **283.726 transações**,
+das quais **473 são fraudes**. O treino usa 198.608 linhas; validação e teste
+usam 42.559 linhas cada. Não há entradas idênticas entre os três conjuntos.
+As contagens e a verificação estão em `reports/data_preparation.json`.
+
+Os runs corrigidos têm a tag `dataset_policy=exact_duplicates_removed_v1`.
+Filtre por essa tag no MLflow para separar os novos resultados dos históricos.
+Use `models/best_run.json` para identificar o vencedor atual; os resultados
+anteriores à deduplicação não representam esta avaliação.
+
 ```bash
 python -m src.train
 ```
@@ -138,6 +150,16 @@ Métricas registradas:
 
 ## 6. Critério de seleção do melhor modelo
 
+Resultado atual após remover as duplicatas: **MLP-03**, camadas `(64, 32)`,
+SMOTE, ReLU, learning rate `0.0001` e limiar **0,83**. Na validação, obteve
+precision de 76%, recall de 80,28% e F1 de 78,08%, o maior F1 entre os cinco
+candidatos, todos com recall acima de 80% nessa etapa.
+
+No teste separado: **precision 66,67%, recall 78,87%, F1 72,26% e ROC-AUC
+0,9535**. Foram detectadas 56 das 71 fraudes, com 28 falsos positivos. O recall
+ficou abaixo da meta de referência de 80%; não reajustamos o modelo ou o limiar
+usando o teste. Esses resultados substituem os anteriores à deduplicação.
+
 O melhor modelo é escolhido pelo maior F1-score da classe fraude entre os modelos com recall aceitável. Em caso de empate, ROC-AUC desempata.
 
 Resposta esperada no README/vídeo após rodar o treino:
@@ -155,11 +177,35 @@ Metas de referência:
 
 ## 7. Iniciar API local
 
+A API recupera `runs:/<best_run_id>/sklearn_model` do MLflow local. O
+preprocessador e o limiar são recuperados do mesmo run. `models/best_run.json`
+identifica o vencedor; as cópias `.joblib` em `models/` não são usadas pela API.
+Mantenha a pasta `mlruns/` da execução disponível. O tracking usa um caminho
+absoluto baseado na raiz do projeto, inclusive no Windows.
+
+O treinamento registra as métricas `test_*` e a tag `selected_model=true` no
+run vencedor. `/health` só informa `ready` depois de carregar os artefatos e
+retorna o `run_id` servido.
+
 Depois do treino gerar os artifacts em `models/`:
 
 ```bash
 uvicorn src.api:app --reload
 ```
+
+No Windows, com o Python que contém as dependências, use:
+
+```powershell
+python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+```
+
+Para validar a integração com os artefatos locais e as entradas inválidas:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Esses testes requerem um treino concluído e `httpx` disponível no ambiente.
 
 Health check:
 
@@ -261,6 +307,11 @@ python -m src.train
 Confirme que o comando foi executado a partir da raiz do projeto e que a pasta `mlruns/` foi criada localmente.
 
 ## Prints do README
+
+As capturas de MLflow e API abaixo são ilustrações históricas da interface,
+anteriores ao novo treinamento sem duplicatas. Para apresentar resultados,
+use os runs atuais filtrados por `dataset_policy`, o relatório de seleção e
+a resposta ao vivo da API. O gráfico de classes acompanha o notebook atual.
 
 Os 5 prints usados neste README estão salvos em `docs/images/`:
 

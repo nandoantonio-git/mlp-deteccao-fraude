@@ -1,0 +1,27 @@
+{
+  "dataset_policy": "exact_duplicates_removed_v1",
+  "training_batch": "d3dc94a21c824076b64e7759b5935dbb",
+  "raw_rows": 284807,
+  "removed_duplicates": 1081,
+  "clean_rows": 283726,
+  "clean_frauds": 473,
+  "splits": {
+    "train": {
+      "rows": 198608,
+      "frauds": 331
+    },
+    "validation": {
+      "rows": 42559,
+      "frauds": 71
+    },
+    "test": {
+      "rows": 42559,
+      "frauds": 71
+    }
+  },
+  "feature_overlap_counts": {
+    "train_validation": 0,
+    "train_test": 0,
+    "validation_test": 0
+  }
+}
