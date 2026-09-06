@@ -277,7 +277,6 @@ Os 5 prints usados neste README estão salvos em `docs/images/`:
 Use o roteiro em:
 
 ```text
-reports/video_script.md
+https://drive.google.com/file/d/1mbYVa6JqWQfUCe69Pbrn0bDp3qqj31zE/view?usp=sharing
 ```
 
-O vídeo deve ter até 5 minutos e cobrir problema, notebook EDA, experimentos MLP, MLflow, API e conclusão baseada nas métricas.
