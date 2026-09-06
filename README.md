@@ -6,10 +6,10 @@ Projeto acadêmico de Machine Learning para detectar fraude em transações de c
 
 | Integrante | RM |
 | --- | --- |
-| Abner P Barbosa | 558468 |
-| Fernando | 555201 |
-| Helo | 554535 |
-| Edu | 556803 |
+| Abner Barbosa | 558468 |
+| Fernando Antonio | 555201 |
+| Heloísa Real | 554535 |
+| Eduardo Dallabella | 556803 |
 
 ## Stack principal
 
@@ -41,12 +41,36 @@ mlp-deteccao-fraude/
 
 ## 1. Preparar ambiente
 
+Execute os comandos a partir da pasta que contém o repositório.
+
+Linux/macOS:
+
 ```bash
 cd mlp-deteccao-fraude
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+Windows (PowerShell):
+
+```powershell
+cd mlp-deteccao-fraude
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Se o PowerShell bloquear a ativação, use diretamente o Python do ambiente,
+sem alterar a política de execução:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Nesse caso, substitua `python` por `.\.venv\Scripts\python.exe` nos comandos
+seguintes. Para abrir o notebook, use `.\.venv\Scripts\jupyter.exe notebook notebooks/eda.ipynb`;
+para o MLflow, use `.\.venv\Scripts\mlflow.exe ui`.
 
 ## 2. Baixar dataset
 
@@ -60,15 +84,26 @@ data/raw/creditcard.csv
 
 O CSV bruto não deve ser commitado no Git.
 
-Verificação:
+Verificação (Linux/macOS):
 
 ```bash
 test -f data/raw/creditcard.csv && echo "dataset ok"
 ```
 
-### Configurar seu token Kaggle (necessário só para baixar o dataset)
+Verificação (PowerShell):
 
-O download via Kaggle (site ou CLI/API) exige um token pessoal. Esse token é **seu**, não é compartilhado no repositório e nunca deve ser commitado.
+```powershell
+Test-Path .\data\raw\creditcard.csv
+```
+
+### Download pelo navegador ou pela CLI
+
+Para baixar pelo navegador, use sua conta no Kaggle e salve o CSV no caminho
+indicado acima; não é necessário configurar um token de API no projeto.
+
+Se optar pela CLI/API, configure a autenticação da sua própria conta. O token
+é pessoal, não é compartilhado no repositório e nunca deve ser commitado.
+As instruções abaixo usam o arquivo `kaggle.json` e comandos de Linux/macOS.
 
 1. Crie uma conta no Kaggle (se ainda não tiver).
 2. Acesse **Account → API → Create New Token**. Isso baixa um arquivo `kaggle.json`.
@@ -131,6 +166,7 @@ Saídas esperadas:
 ```text
 reports/experiment_results.csv
 reports/model_selection.md
+reports/data_preparation.json
 models/best_model.joblib
 models/preprocessor.joblib
 models/best_run.json
@@ -145,6 +181,15 @@ mlflow ui
 
 Abra a URL indicada pelo terminal e compare os runs por parâmetros e métricas.
 
+Para mostrar somente os experimentos sem duplicatas, cole na busca do MLflow:
+
+```text
+tags.dataset_policy = 'exact_duplicates_removed_v1'
+```
+
+Compare os candidatos pelas métricas `val_*`. As métricas `test_*` são a
+avaliação final do vencedor, identificado pela tag `selected_model=true`.
+
 Métricas registradas:
 
 - accuracy;
@@ -153,7 +198,10 @@ Métricas registradas:
 - F1-score da classe fraude;
 - ROC-AUC.
 
-![Lista de runs no MLflow, MLP-01 a MLP-05](docs/images/mlflow-runs-list.png)
+As duas capturas abaixo são históricas, anteriores à deduplicação. Os resultados
+atuais estão na seção seguinte e em `reports/experiment_results.csv`.
+
+![Lista histórica de runs no MLflow, MLP-01 a MLP-05](docs/images/mlflow-runs-list.png)
 
 ![Comparação de runs no MLflow, hiperparâmetros vs métricas](docs/images/mlflow-runs-compare.png)
 
@@ -171,11 +219,8 @@ usando o teste. Esses resultados substituem os anteriores à deduplicação.
 
 O melhor modelo é escolhido pelo maior F1-score da classe fraude entre os modelos com recall aceitável. Em caso de empate, ROC-AUC desempata.
 
-Resposta esperada no README/vídeo após rodar o treino:
-
-> O modelo selecionado foi o indicado em `reports/model_selection.md`. Ele foi escolhido por apresentar o melhor equilíbrio entre recall e precision da classe fraude, maximizando o F1-score entre os experimentos com recall aceitável. O ROC-AUC foi usado como critério de desempate. As métricas finais em teste estão registradas em `models/best_run.json` e no relatório de seleção.
-
-Se alguma meta de referência não for atingida, documente o tradeoff honestamente. O projeto continua defensável se todos os experimentos estiverem rastreados e a seleção estiver bem justificada.
+O run escolhido e a justificativa estão em [reports/model_selection.md](reports/model_selection.md).
+As métricas finais também são registradas no MLflow e em `models/best_run.json`.
 
 Metas de referência:
 
@@ -234,7 +279,7 @@ Em outro terminal, com o ambiente ativado:
 python scripts/test_api.py
 ```
 
-Resposta esperada:
+Exemplo ilustrativo do formato da resposta:
 
 ```json
 {
@@ -245,6 +290,8 @@ Resposta esperada:
 ```
 
 Os valores podem mudar conforme o modelo treinado.
+
+Captura histórica da resposta, anterior ao treinamento sem duplicatas:
 
 ![Terminal com a resposta de python scripts/test_api.py](docs/images/api-test-response.png)
 
@@ -287,7 +334,7 @@ Entrada JSON com todos os campos numéricos:
 }
 ```
 
-Saída:
+Saída ilustrativa (a probabilidade depende do modelo e da transação):
 
 ```json
 {
@@ -305,11 +352,20 @@ Erro esperado se `data/raw/creditcard.csv` estiver ausente. Baixe do Kaggle e co
 
 ### API retorna erro 503
 
-Significa que os artifacts do modelo ainda não existem. Rode antes:
+Significa que a API não conseguiu carregar o modelo selecionado. Isso pode
+ocorrer se `models/best_run.json` estiver ausente ou inválido, se o run indicado
+não estiver ativo e concluído, ou se o modelo, o preprocessador ou o limiar
+desse run estiverem indisponíveis ou inválidos.
+
+Confira o erro no terminal da API e a disponibilidade da pasta `mlruns/`.
+Se ainda não houver um treinamento completo, execute:
 
 ```bash
 python -m src.train
 ```
+
+Após corrigir os artefatos ou concluir um novo treinamento, reinicie a API e
+confirme em `/health` que `ready` é `true` e que `run_id` corresponde ao vencedor.
 
 ### MLflow UI não mostra runs
 
@@ -317,7 +373,7 @@ Confirme que o comando foi executado a partir da raiz do projeto e que a pasta `
 
 ## Prints do README
 
-As capturas de MLflow e API abaixo são ilustrações históricas da interface,
+As capturas de MLflow e API usadas neste documento são ilustrações históricas da interface,
 anteriores ao novo treinamento sem duplicatas. Para apresentar resultados,
 use os runs atuais filtrados por `dataset_policy`, o relatório de seleção e
 a resposta ao vivo da API. O gráfico de classes acompanha o notebook atual.
@@ -334,9 +390,7 @@ Os 5 prints usados neste README estão salvos em `docs/images/`:
 
 ## Vídeo
 
-Use o roteiro em:
+[Assistir ao vídeo explicativo](https://drive.google.com/file/d/1mbYVa6JqWQfUCe69Pbrn0bDp3qqj31zE/view?usp=sharing)
 
-```text
-https://drive.google.com/file/d/1mbYVa6JqWQfUCe69Pbrn0bDp3qqj31zE/view?usp=sharing
-```
+O [roteiro usado na gravação](reports/video_script.md) também está disponível no repositório.
 
