@@ -2,14 +2,10 @@
 
 Projeto acadêmico de Machine Learning para detectar fraude em transações de cartão de crédito usando MLP, rastreamento de experimentos e API local de predição.
 
-## Integrantes
+## Autoria
 
-| Integrante | RM |
-| --- | --- |
-| Abner Barbosa | 558468 |
-| Fernando Antonio | 555201 |
-| Heloísa Real | 554535 |
-| Eduardo Dallabella | 556803 |
+Projeto individual desenvolvido por **Fernando Luiz Silva Antonio**, como atividade acadêmica
+de Machine Learning (detecção de fraude em cartão de crédito com MLP).
 
 ## Stack principal
 
